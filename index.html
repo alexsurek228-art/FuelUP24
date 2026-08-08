@@ -3,46 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мое Мини Приложение</title>
-    <!-- Подключаем официальный скрипт Telegram -->
-    <script src="https://telegram.org"></script>
+    <title>SmartHealth PRO</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
-            text-align: center;
-            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('https://unsplash.com') no-repeat center center fixed;
+            background-size: cover;
+            color: #ffffff;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
+        h1 { color: #4CAF50; margin-bottom: 5px; font-size: 26px; }
+        .subtitle { color: #888; font-size: 12px; margin-bottom: 15px; }
+        .nav-row { display: flex; gap: 10px; margin-bottom: 15px; }
         button {
-            background-color: var(--tg-theme-button-color, #2481cc);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 20px;
+            background-color: #37474F; color: white; border: none;
+            padding: 10px 15px; font-weight: bold; border-radius: 5px; cursor: pointer;
         }
+        .action-btn { width: 100%; max-width: 320px; font-size: 15px; border-radius: 5px; margin-top: 5px; }
+        .screen { display: none; width: 100%; max-width: 320px; flex-direction: column; gap: 10px; }
+        .active { display: flex; }
+        select, input {
+            width: 100%; padding: 12px; border-radius: 5px; border: 1px solid #444;
+            background-color: #222; color: white; box-sizing: border-box;
+        }
+        .card {
+            background-color: #333; padding: 12px; border-radius: 8px;
+            margin-top: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .result-title { font-size: 18px; font-weight: bold; margin: 5px 0; }
+        .win-card { background-color: #1B5E20 !important; }
     </style>
 </head>
 <body>
-    <h1>Привет, Даня!</h1>
-    <p>Это твое первое Telegram Mini App.</p>
-    
-    <!-- Кнопка, которая отправит данные обратно в Python -->
-    <button id="sendBtn">Выполнить программу</button>
+
+    <h1>SmartHealth PRO</h1>
+    <div class="subtitle">Мобильный мониторинг здоровья</div>
+
+    <!-- Физические кнопки навигации -->
+    <div class="nav-row">
+        <button onclick="showScreen('profile')" style="background-color: #1565C0;">ПРОФИЛЬ</button>
+        <button onclick="showScreen('ration')" style="background-color: #2E7D32;">РАЦИОН</button>
+        <button onclick="showScreen('prices')" style="background-color: #EF6C00;">ЦЕНЫ КРСК</button>
+    </div>
+
+    <hr style="width: 100%; max-width: 320px; border: 0; border-top: 1px solid #444; margin-bottom: 15px;">
+
+    <!-- ЭКРАН 1: ПРОФИЛЬ -->
+    <div id="profile" class="screen active">
+        <select id="gender"><option>Муж</option><option>Жен</option></select>
+        <input type="number" id="height" placeholder="Рост (см)" value="175">
+        <input type="number" id="weight" placeholder="Вес (кг)" value="70">
+        <input type="number" id="age" placeholder="Возраст" value="25">
+        <select id="activity">
+            <option value="1.2">Минимум</option>
+            <option value="1.55">Средняя</option>
+            <option value="1.725">Высокая</option>
+        </select>
+        <select id="goal">
+            <option>Похудение</option>
+            <option>Баланс</option>
+            <option>Набор массы</option>
+        </select>
+        <button class="action-btn" style="background-color: #2E7D32;" onclick="calcProfile()">РАССЧИТАТЬ КБЖУ</button>
+        <div id="prof-res" style="text-align: center; margin-top: 10px;">
+            <div class="result-title" style="color: #81C784;" id="res-cal">Суточная норма: -- ккал</div>
+            <div id="res-bju" style="color: #fff; font-size: 14px;">Б: --г | Ж: --г | У: --г</div>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 2: РАЦИОН -->
+    <div id="ration" class="screen">
+        <input type="text" id="products" placeholder="Продукты через запятую" value="гречка, куриное филе, яйца">
+        <button class="action-btn" style="background-color: #1565C0;" onclick="genMenu()">СОЗДАТЬ МЕНЮ РАЦИОНА</button>
+        <div id="menu-container"></div>
+    </div>
+
+    <!-- ЭКРАН 3: ЦЕНЫ КРАСНОЯРСК -->
+    <div id="prices" class="screen">
+        <div style="color: #aaa; font-size: 14px; text-align: center;">Мониторинг цен (Красноярск)</div>
+        <button class="action-btn" style="background-color: #EF6C00;" onclick="getPrices()">ОБНОВИТЬ ЦЕНЫ СУПЕРМАРКЕТОВ</button>
+        <div id="prices-container"></div>
+    </div>
 
     <script>
-        // Инициализируем Telegram WebApp
-        const tg = window.Telegram.WebApp;
-        tg.expand(); // Расширяем приложение на весь экран
+        let globalCalories = 2000;
 
-        document.getElementById('sendBtn').addEventListener('click', () => {
-            // Отправляем данные обратно в бота
-            tg.sendData("Кнопка нажата! Тут будут данные твоей программы");
-            tg.close(); // Закрываем мини-приложение
-        });
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function calcProfile() {
+            let w = parseFloat(document.getElementById('weight').value);
+            let h = parseFloat(document.getElementById('height').value);
+            let a = parseFloat(document.getElementById('age').value);
+            let g = document.getElementById('gender').value;
+            let act = parseFloat(document.getElementById('activity').value);
+            let goal = document.getElementById('goal').value;
+
+            if(!w || !h || !a) { alert("Заполните все поля числами!"); return; }
+
+            let bmr = 10 * w + 6.25 * h - 5 * a + (g === "Муж" ? 5 : -161);
+            let m = bmr * act;
+            globalCalories = Math.round(m * (goal === "Похудение" ? 0.85 : (goal === "Набор массы" ? 1.15 : 1.0)));
+
+            let p = goal === "Похудение" ? 0.4 : 0.3;
+            let f = goal === "Похудение" ? 0.25 : 0.3;
+            let u = goal === "Похудение" ? 0.35 : 0.4;
+
+            document.getElementById('res-cal').innerText = `Суточная норма: ${globalCalories} ккал`;
+            document.getElementById('res-bju').innerText = `Б: ${Math.round(globalCalories*p/4)}г • Ж: ${Math.round(globalCalories*f/9)}г • У: ${Math.round(globalCalories*u/4)}г`;
+        }
+
+        function genMenu() {
+            let db = {"куриное филе": 110, "гречка": 310, "яйца": 155, "творог": 120, "яблоки": 47};
+            let input = document.getElementById('products').value.split(',').map(p => p.trim().toLowerCase());
+            let valid = input.filter(p => db[p]) || ["яйца", "куриное филе", "гречка"];
+            let cont = document.getElementById('menu-container');
+            cont.innerHTML = '';
+
+            let meals = [["Завтрак", 0.35], ["Обед", 0.40], ["Ужин", 0.25]];
+            meals.forEach(([meal, pct]) => {
+                let item = valid[Math.floor(Math.random() * valid.length)] || "яйца";
+                let g = Math.round((globalCalories * pct / db[item]) * 100);
+                cont.innerHTML += `<div class="card"><div style="font-weight:bold;color:#64B5F6">${meal}: ${item.toUpperCase()} (${g}г)</div><div style="font-size:11px;color:#aaa">Всего калорий: ${Math.round(db[item]*g/100)} ккал</div></div>`;
+            });
+        }
+
+        function getPrices() {
+            let cont = document.getElementById('prices-container');
+            cont.innerHTML = '';
+            let items = document.getElementById('products').value.split(',').map(p => p.trim());
+            let stores = ["Командор", "Красный Яр", "Пятерочка", "Магнит", "Лента"];
+            let prices = {};
+            
+            stores.forEach(s => {
+                prices[s] = items.reduce((sum) => sum + Math.floor(Math.random() * (300 - 90 + 1) + 90), 0);
+            });
+            
+            let best = Object.keys(prices).reduce((a, b) => prices[a] < prices[b] ? a : b);
+
+            stores.forEach(s => {
+                let win = s === best;
+                cont.innerHTML += `<div class="card ${win ? 'win-card' : ''}"><div style="font-weight:bold;color:${win ? '#fff' : '#64B5F6'}">${s} ➔ ${prices[s]} руб. ${win ? '(ВЫГОДНО!)' : ''}</div><div style="font-size:10px;color:${win ? '#fff' : '#aaa'}">Корзина Красноярск: ${items.join(', ')}</div></div>`;
+            });
+        }
     </script>
 </body>
 </html>
