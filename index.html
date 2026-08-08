@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мое Мини Приложение</title>
+    <!-- Подключаем официальный скрипт Telegram -->
+    <script src="https://telegram.org"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            text-align: center;
+            padding: 20px;
+        }
+        button {
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Привет, Даня!</h1>
+    <p>Это твое первое Telegram Mini App.</p>
+    
+    <!-- Кнопка, которая отправит данные обратно в Python -->
+    <button id="sendBtn">Выполнить программу</button>
+
+    <script>
+        // Инициализируем Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Расширяем приложение на весь экран
+
+        document.getElementById('sendBtn').addEventListener('click', () => {
+            // Отправляем данные обратно в бота
+            tg.sendData("Кнопка нажата! Тут будут данные твоей программы");
+            tg.close(); // Закрываем мини-приложение
+        });
+    </script>
+</body>
+</html>
