@@ -241,4 +241,8 @@ def main(page: ft.Page):
 
 
 if __name__ == "__main__":
-    ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=9990, host="0.0.0.0")
+    import os
+    # Автоматически берем порт, который выдаст хостинг, либо используем 9990 по умолчанию
+    port = int(os.environ.get("PORT", 9990))
+    ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port, host="0.0.0.0")
+
